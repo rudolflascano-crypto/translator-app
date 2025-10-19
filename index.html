@@ -1,30 +1,65 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Translator App</title>
+  <style>
+    body{margin:0;background:#0f172a;color:#e5e7eb;font:16px system-ui;display:flex;min-height:100vh;align-items:start;justify-content:center}
+    main{width:min(760px,92%);margin-top:6vh}
+    h1{font-size:2rem;margin:0 0 12px}
+    textarea{width:100%;min-height:120px;padding:12px;border-radius:12px;border:1px solid #1f2937;background:#0b1220;color:#e5e7eb}
+    .row{display:flex;gap:8px;align-items:center;margin:10px 0}
+    select,button{padding:10px;border-radius:10px;border:0;background:#1f2937;color:#e5e7eb}
+    button{cursor:pointer}
+    pre{background:#0b1220;padding:14px;border-radius:12px;white-space:pre-wrap}
+  </style>
 </head>
-<body style="font-family:sans-serif;background:#0f172a;color:white;display:flex;flex-direction:column;align-items:center;gap:10px;padding-top:40px">
-  <h1>🌎 Translator App</h1>
-  <textarea id="input" rows="4" cols="40" placeholder="Type text here..."></textarea>
-  <select id="lang">
-    <option value="es">Spanish</option>
-    <option value="fr">French</option>
-    <option value="de">German</option>
-  </select>
-  <button onclick="translate()">Translate</button>
-  <h3>Result:</h3>
-  <p id="output"></p>
+<body>
+  <main>
+    <h1>🌎 Translator App</h1>
+    <textarea id="src" placeholder="Type text…">hi</textarea>
+    <div class="row">
+      <label>From:</label>
+      <select id="from">
+        <option value="auto" selected>Auto</option>
+        <option>en</option><option>es</option><option>fr</option><option>de</option>
+      </select>
+      <span>→</span>
+      <label>To:</label>
+      <select id="to">
+        <option>es</option><option selected>en</option><option>fr</option><option>de</option>
+      </select>
+      <button id="go">Translate</button>
+    </div>
+    <h3>Result:</h3>
+    <pre id="out">…</pre>
+  </main>
 
   <script>
-    async function translate(){
-      const text=document.getElementById("input").value;
-      const lang=document.getElementById("lang").value;
-      const res=await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|${lang}`);
-      const data=await res.json();
-      document.getElementById("output").innerText=data.responseData.translatedText;
-    }
+    const $ = s => document.querySelector(s);
+    $('#go').onclick = async () => {
+      const text = $('#src').value.trim();
+      if(!text) return $('#out').textContent = 'Type something to translate.';
+      $('#out').textContent = 'Translating…';
+      try {
+        const r = await fetch('https://libretranslate.de/translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            q: text,
+            source: $('#from').value,   // 'auto' works
+            target: $('#to').value,
+            format: 'text'
+          })
+        });
+        if(!r.ok) throw new Error('HTTP ' + r.status);
+        const data = await r.json();
+        $('#out').textContent = data.translatedText || JSON.stringify(data);
+      } catch (e) {
+        $('#out').textContent = 'Error: ' + e.message + '\n(The free demo API may be rate-limited. Try again in a minute.)';
+      }
+    };
   </script>
 </body>
 </html>
